@@ -28,6 +28,34 @@
  *	DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
+ *  Use Exemple :::
+
+    (function(window, undefined){
+
+        var Game,
+            document = window.document,
+            location = window.location,
+            navigator = window.navigator;
+
+
+        Game = function(){
+            var i = 0;
+            console.log(Core.handler);
+            Ayumi.handler.AddEvent('test',function(){
+                if(i++<6)
+                    console.log('toto');
+            });
+        };
+
+        window.Game = new Game();
+
+        window.addEventListener('click',function(){
+            console.log('stop');
+            Ayumi.handler.break();
+        });
+
+    })(window);
+
  *
  *
  **/
