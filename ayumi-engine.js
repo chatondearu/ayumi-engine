@@ -62,6 +62,11 @@
 
 (function(window, undefined){
 
+    /*
+     * Set up global to Ayumi and all Modul
+     *
+     * Root
+     * */
     var AyumiRoot,
     //Get all environment's arguments
         document = window.document,
@@ -73,6 +78,12 @@
             return new Ayumi.fn.init(AyumiRoot);
         };
 
+    /**
+     * Ayumi.fn
+     *
+     * we Initialize Core Object and instantiates Core.fn
+     * @type {Object}
+     */
     Ayumi.fn = Ayumi.prototype = {
         constructor : Ayumi,
         init : function(AyumiRoot){
@@ -87,11 +98,64 @@
     Ayumi.fn.init.prototype = Ayumi.fn;
 
     //Starting tools
+    /**
+     * Ayumi.tools.isFunc()
+     *
+     *  return if value is a function
+     *
+     * @param value
+     * @return {Boolean}
+     */
     function isFunc(value){return typeof value == 'function';}
+
+    /**
+     * Ayumi.tools.isNum()
+     *
+     *  return if value is a Number
+     *
+     * @param value
+     * @return {Boolean}
+     */
     function isNum(value){return typeof value == 'number'}
+
+    /**
+     * Ayumi.tools.isFunc()
+     *
+     *  return if value is a String
+     *
+     * @param value
+     * @return {Boolean}
+     */
     function isStr(value){return typeof value == 'string'}
+
+    /**
+     * Ayumi.tools.isObj()
+     *
+     *  return if value is a Object
+     *
+     * @param value
+     * @return {Boolean}
+     */
     function isObj(value){return typeof value == 'object'}
+
+    /**
+     * Ayumi.tools.int()
+     *
+     *  return String into Integer
+     *
+     * @param str{String}
+     * @return {Number}
+     */
     function int(str) {return parseInt(str, 10)}
+
+    /**
+     * Ayumi.tools.str()
+     *
+     *  return value into Strong
+     *
+     * @param value
+     * @return {String}
+     */
     function str(value) {return value+''}
 
     /**
@@ -367,6 +431,15 @@
 
         return this;
     }
+
+    function Loader(){
+
+    }
+
+    function Screen(){
+
+    }
+
 
     //Add all Function and Object at external Ayumi instance
     Ayumi.extend({
