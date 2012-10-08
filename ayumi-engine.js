@@ -40,7 +40,7 @@
 
         Game = function(){
             var i = 0;
-            console.log(Core.handler);
+            console.log(Ayumi.handler);
             Ayumi.handler.AddEvent('test',function(){
                 if(i++<6)
                     console.log('toto');
@@ -61,6 +61,9 @@
  **/
 
 (function(window, undefined){
+    'use strict';
+
+////////////////////////////////////
 
     /*
      * Set up global to Ayumi and all Modul
@@ -73,8 +76,13 @@
         location = window.location,
         navigator = window.navigator,
 
+    // Copy Jquery or Mootools Frameworks
+        _Jquery = window.Jquery || (window.Jquery = {}),
+        _Mootools = window.Mootools || (window.Mootools = {}),
+
     //Constante of Core params
         conf={
+            //URL to the Server ReST
             SERVER : '../server/'
         },
 
@@ -92,7 +100,7 @@
     Ayumi.fn = Ayumi.prototype = {
         constructor : Ayumi,
         init : function(AyumiRoot){
-            return this;
+            return AyumiRoot = this;
         },
         // The current version of Ayumi being used
         core: "0.0.1",
@@ -110,7 +118,7 @@
      * Ayumi.log()
      */
     function log(){
-        var message = Core.fn,type = 'log',script='';
+        var message = Ayumi.fn,type = 'log',script='';
         if(arguments.length>0){
             // log(message)
             if(arguments.length<2){
@@ -147,9 +155,9 @@
      */
 
     /**
-     * Ayumi.tools.isFunc()
+     * @name Ayumi.tools.isFunc()
      *
-     *  return if value is a function
+     * @description return if value is a function
      *
      * @param value
      * @return {Boolean}
@@ -157,9 +165,9 @@
     function isFunc(value){return typeof value == 'function';}
 
     /**
-     * Ayumi.tools.isNum()
+     * @name Ayumi.tools.isNum()
      *
-     *  return if value is a Number
+     * @description return if value is a Number
      *
      * @param value
      * @return {Boolean}
@@ -167,9 +175,9 @@
     function isNum(value){return typeof value == 'number'}
 
     /**
-     * Ayumi.tools.isFunc()
+     * @name Ayumi.tools.isFunc()
      *
-     *  return if value is a String
+     * @description return if value is a String
      *
      * @param value
      * @return {Boolean}
@@ -177,9 +185,9 @@
     function isStr(value){return typeof value == 'string'}
 
     /**
-     * Ayumi.tools.isObj()
+     * @name Ayumi.tools.isObj()
      *
-     *  return if value is a Object
+     * @description return if value is a Object
      *
      * @param value
      * @return {Boolean}
@@ -187,9 +195,19 @@
     function isObj(value){return typeof value == 'object'}
 
     /**
-     * Ayumi.tools.int()
+     * @name Ayumi.tools.isUndef()
      *
-     *  return String into Integer
+     * @description return if the type of value is undefined
+     *
+     * @param value
+     * @return {Boolean}
+     */
+    function isUndef(value) {return typeof(value)=='undefined'}
+
+    /**
+     * @name Ayumi.tools.int()
+     *
+     * @description return String into Integer
      *
      * @param str{String}
      * @return {Number}
@@ -197,9 +215,9 @@
     function int(str) {return parseInt(str, 10)}
 
     /**
-     * Ayumi.tools.str()
+     * @name Ayumi.tools.str()
      *
-     *  return value into Strong
+     * @description return value into Strong
      *
      * @param value
      * @return {String}
@@ -207,7 +225,7 @@
     function str(value) {return value+''}
 
     /**
-     * Ayumi.tools
+     * @name Ayumi.tools
      * @type {Object}
      */
     var tools = {
@@ -215,7 +233,9 @@
         isNum:isNum,
         isStr:isStr,
         isObj:isObj,
-        int :int
+        isUndef:isUndef,
+        int :int,
+        str :str
     };
     //Add extend at Ayumi for later
     Ayumi.tools = Ayumi.fn.tools = tools;
@@ -225,7 +245,7 @@
      */
 
     /***
-     * Ayumi.each
+     * @name Ayumi.each
      *
      * @param obj
      * @param iterator
@@ -260,13 +280,15 @@
     Ayumi.each = Ayumi.fn.each = each;
 
     /***
-     * Ayumi.extend
+     * @name Ayumi.extend
      *
      * @param obj
-     * @param extObj
      * @return {*}
      */
-    function extend(obj, extObj) {
+    function extend(obj) {
+        var extObj = null;
+        if(arguments.length == 2)
+            extObj= arguments[1];
         if(arguments.length === 1){
             var options = arguments[0];
             obj =  Ayumi.fn;
@@ -286,7 +308,7 @@
     Ayumi.extend = Ayumi.fn.extend = extend;
 
     /**
-     * Core.json
+     * @name Core.json
      *
      * @param uri
      * @param callback
@@ -326,9 +348,9 @@
      */
 
     /**
-     * Ayumi.handler.clock
+     * @name Ayumi.handler.clock
      *
-     * Clock object implements a loop with a setTimeOut() and "interval" passed as a parameter
+     * @description Clock object implements a loop with a setTimeOut() and "interval" passed as a parameter
      * this loop indefinitely repeat an action that time is the Clock does not pause.
      * generally the Clock will be managed by Ayumi Handler
      *
@@ -388,7 +410,7 @@
     }
 
     /***
-     * Class Event
+     * @name Class Event
      *
      * @param name
      * @param doEvent
@@ -407,7 +429,7 @@
     }
 
     /***
-     * Ayumi.handler.buffer
+     * @name Ayumi.handler.buffer
      *
      * @constructor
      */
@@ -489,7 +511,7 @@
     }
 
     /***
-     * Ayumi.hanlder
+     * @name Ayumi.hanlder
      *
      * @constructor
      */
