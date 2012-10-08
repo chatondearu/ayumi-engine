@@ -73,6 +73,11 @@
         location = window.location,
         navigator = window.navigator,
 
+    //Constante of Core params
+        conf={
+            SERVER : '../server/'
+        },
+
     //Set the local copy of Ayumi definition
         Ayumi = function(){
             return new Ayumi.fn.init(AyumiRoot);
@@ -97,7 +102,50 @@
 
     Ayumi.fn.init.prototype = Ayumi.fn;
 
-    //Starting tools
+    /***
+     *  MODULE DE LOG --------------------------------------------------------------------------------------------------
+     */
+
+    /**
+     * Ayumi.log()
+     */
+    function log(){
+        var message = Core.fn,type = 'log',script='';
+        if(arguments.length>0){
+            // log(message)
+            if(arguments.length<2){
+                message = arguments[0];
+            }else{
+                // log(type,message,log,log,log,[...])
+                type = arguments[0];
+                message = arguments[1];
+                for(var i= 2,l=arguments.length;i<l;i++)
+                    script+='console.'+type+'(arguments['+i+']);';
+            }
+        }
+        if(console){
+            if(script == '')
+                eval('console.'+type+'(message)');
+            else{
+                console.group(message);
+                eval(script);
+                console.groupEnd();
+            }
+        }else{
+            alert('==='+type+'===\n'+message);
+        }
+    }
+    //Add log at Core for later
+    Ayumi.log = Ayumi.fn.log = log;
+
+    /***
+     *  END MODULE DE LOG ----------------------------------------------------------------------------------------------
+     */
+
+    /***
+     *  TOOLS FUNCTIONS ------------------------------------------------------------------------------------------------
+     */
+
     /**
      * Ayumi.tools.isFunc()
      *
@@ -173,6 +221,10 @@
     Ayumi.tools = Ayumi.fn.tools = tools;
 
     /***
+     *  END TOOLS FUNCTIONS --------------------------------------------------------------------------------------------
+     */
+
+    /***
      * Ayumi.each
      *
      * @param obj
@@ -232,6 +284,46 @@
     }
     //Add extend at Ayumi for later
     Ayumi.extend = Ayumi.fn.extend = extend;
+
+    /**
+     * Core.json
+     *
+     * @param uri
+     * @param callback
+     */
+    function ajax(uri,callback){
+        if(!isFunc(callback))
+            callback = function(){};
+        if(Request){
+            //TODO Class Request à reprendre de mootools. et incorporer ici
+            var _request = new Request({
+                url: conf.SERVER+uri,
+                method: 'post',
+                format: 'json',
+                async: true,
+                noCache : true,
+                onSuccess: function(data){
+                    log('info','get json is success with data =',data);
+                    return callback();
+                },
+                onFailure: function(data){
+                    log('info','get json is complete');
+                    return callback(data);
+                },
+                onCancel: function(data){
+                    log('warn','get json is canceled');
+                    return callback(data);
+                }
+            });
+            return _request;
+        }
+    }
+    //Add ajax at Core for later
+    Ayumi.ajax = Ayumi.fn.ajax = ajax;
+
+    /***
+     * MODULE HANDLER --------------------------------------------------------------------------------------------------
+     */
 
     /**
      * Ayumi.handler.clock
@@ -431,6 +523,10 @@
 
         return this;
     }
+
+    /***
+     *  END MODULE HANDLER ---------------------------------------------------------------------------------------------
+     */
 
     function Loader(){
 
