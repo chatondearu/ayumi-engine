@@ -577,7 +577,7 @@
             eval("this.extend({"+name+":action});");
             Ayumi.handler.addEvent("event_"+this.name+"_"+name,function(){
                 if(eval(conditions)){
-                    action();
+                    action(me);
                     Ayumi.handler.removeEvent("event_"+me.name+"_"+name);
                 }
             });
