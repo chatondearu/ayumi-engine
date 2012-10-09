@@ -92,9 +92,9 @@
         };
 
     /**
-     * Ayumi.fn
+     * @name Ayumi.fn
      *
-     * we Initialize Core Object and instantiates Core.fn
+     * @description we Initialize Core Object and instantiates Core.fn
      * @type {Object}
      */
     Ayumi.fn = Ayumi.prototype = {
@@ -245,44 +245,48 @@
      */
 
     /***
-     * @name Ayumi.each
+     * @name Ayumi.each()
      *
      * @param obj
      * @param iterator
      * @param context
      * @return {*}
      */
-    function each(obj, iterator, context) {
+    function each(obj,iterator,context) {
         var key;
-        if (obj) {
-            if (isFunc(obj)){
-                for (key in obj) {
-                    if (key != 'prototype' && key != 'length' && key != 'name' && obj.hasOwnProperty(key)) {
-                        iterator.call(context, obj[key], key);
-                    }
-                }
-            } else if (obj.each && obj.each !== Ayumi.each) {
-                obj.each(iterator, context);
-            } else if (isObj(obj) && isNum(obj.length)) {
-                for (key = 0; key < obj.length; key++)
+        if (arguments.length===1){
+            obj = this;
+            iterator = arguments[0];
+        }else if (arguments.length===2){
+            obj = arguments[0];
+            iterator = arguments[1];
+        }
+        if (isFunc(obj)){
+            for (key in obj) {
+                if (key != 'prototype' && key != 'length' && key != 'name' && obj.hasOwnProperty(key)) {
                     iterator.call(context, obj[key], key);
-            } else {
-                for (key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        iterator.call(context, obj[key], key);
-                    }
+                }
+            }
+        } else if (obj.each && obj.each !== Ayumi.each) {
+            obj.each(iterator, context);
+        } else if (isObj(obj) && isNum(obj.length)) {
+            for (key = 0; key < obj.length; key++)
+                iterator.call(context, obj[key], key);
+        } else {
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    iterator.call(context, obj[key], key);
                 }
             }
         }
         return obj;
     }
     //Add extend at Ayumi for later
-    Ayumi.each = Ayumi.fn.each = each;
+    Object.prototype.each = Ayumi.each = Ayumi.fn.each = each;
 
     /***
      * @name Ayumi.extend
      *
-     * @param obj
      * @return {*}
      */
     function extend(obj) {
@@ -290,25 +294,26 @@
         if(arguments.length == 2)
             extObj= arguments[1];
         if(arguments.length === 1){
-            var options = arguments[0];
-            obj =  Ayumi.fn;
+            var options = arguments[0],
+                obj =  this;
             extend(obj,options);
         }else if(arguments.length > 2) {
             for (var a = 1; a < arguments.length; a++) {
                 extend(obj, arguments[a]);
             }
         }else{
-            Ayumi.each(extObj,function(ext,key){
+            extObj.each(function(ext,key){
                 obj[key] = ext;
             });
         }
         return obj;
     }
     //Add extend at Ayumi for later
-    Ayumi.extend = Ayumi.fn.extend = extend;
+    Object.prototype.extend = Ayumi.extend = Ayumi.fn.extend = extend;
 
+    //TODO Actuellement function, Transformation requete ajax en Module avec gestion de queue
     /**
-     * @name Core.json
+     * @name Ayumi.ajax
      *
      * @param uri
      * @param callback
@@ -316,31 +321,31 @@
     function ajax(uri,callback){
         if(!isFunc(callback))
             callback = function(){};
-        if(Request){
-            //TODO Class Request à reprendre de mootools. et incorporer ici
+        if(window.Request){
             var _request = new Request({
-                url: conf.SERVER+uri,
+                url: uri,
                 method: 'post',
                 format: 'json',
                 async: true,
                 noCache : true,
                 onSuccess: function(data){
-                    log('info','get json is success with data =',data);
-                    return callback();
+                    log('info','request to '+uri+' success with data :',data);
+                    return callback(data);
                 },
                 onFailure: function(data){
-                    log('info','get json is complete');
+                    log('info','request to '+uri+' is complete');
                     return callback(data);
                 },
                 onCancel: function(data){
-                    log('warn','get json is canceled');
+                    log('warn','request to '+uri+' is canceled');
                     return callback(data);
                 }
             });
+            //TODO retour de l'objet compatible seulement mootools, prévus évolution avec gestionnaire de queue ajax
             return _request;
         }
     }
-    //Add ajax at Core for later
+    //Add ajax at Ayumi for later
     Ayumi.ajax = Ayumi.fn.ajax = ajax;
 
     /***
@@ -490,7 +495,7 @@
         };
 
         this.execBuffer = function(){
-            Ayumi.each(b,function(obj){
+            b.each(function(obj){
                 if(obj.hasOwnProperty('event'))
                     obj.event();
             });
@@ -545,9 +550,44 @@
 
         return this;
     }
+    Ayumi.handler = Ayumi.fn.handler = new Handler;
 
     /***
      *  END MODULE HANDLER ---------------------------------------------------------------------------------------------
+     */
+
+    /***
+     *  MODULE Event ---------------------------------------------------------------------------------------------------
+     * Dependency :: Module Handler
+     */
+
+    //event ajoute un event unique listener à un object
+    /**
+     * @name Object.event
+     *
+     * @description Set a Listener on an Object, when the conditions required is true the callback is called
+     *
+     * @param name
+     * @param conditions
+     * @param action
+     */
+    function event(name,conditions,action){
+        var me = this;
+        if(isObj(this)){
+            eval("this.extend({"+name+":action});");
+            Ayumi.handler.addEvent("event_"+this.name+"_"+name,function(){
+                if(eval(conditions)){
+                    action();
+                    Ayumi.handler.removeEvent("event_"+me.name+"_"+name);
+                }
+            });
+        }else
+            throw new Error("Can't add event as no Object");
+    }
+    Object.prototype.event = Ayumi.event = Ayumi.fn.event = event;
+
+    /***
+     *  END MODULE Event -----------------------------------------------------------------------------------------------
      */
 
     function Loader(){
@@ -560,8 +600,9 @@
 
 
     //Add all Function and Object at external Ayumi instance
-    Ayumi.extend({
-        handler : new Handler()
+    Ayumi.fn.extend({
+        screen : Screen,
+        loader : Loader
     });
 
 
