@@ -77,8 +77,10 @@
         navigator = window.navigator,
 
     // Copy Jquery or Mootools Frameworks
-        _Jquery = window.Jquery || (window.Jquery = {}),
-        _Mootools = window.Mootools || (window.Mootools = {}),
+        _Jquery = window.Jquery || (window.Jquery = {jquery:'none'}),
+        _Mootools = window.Mootools || (window.Mootools = {version:'none'}),
+        if_Jquery = !!(_Jquery.jquery != 'none'),
+        if_Mootools = !!(_Mootools.version != 'none'),
 
     //Constante of Core params
         conf={
@@ -205,24 +207,24 @@
     function isUndef(value) {return typeof(value)=='undefined'}
 
     /**
-     * @name Ayumi.tools.int()
+     * @name Ayumi.tools.toInt()
      *
      * @description return String into Integer
      *
      * @param str{String}
      * @return {Number}
      */
-    function int(str) {return parseInt(str, 10)}
+    function toInt(str) {return parseInt(str, 10)}
 
     /**
-     * @name Ayumi.tools.str()
+     * @name Ayumi.tools.toStr()
      *
      * @description return value into Strong
      *
      * @param value
      * @return {String}
      */
-    function str(value) {return value+''}
+    function toStr(value) {return value+''}
 
     /**
      * @name Ayumi.tools
@@ -234,11 +236,12 @@
         isStr:isStr,
         isObj:isObj,
         isUndef:isUndef,
-        int :int,
-        str :str
+        toInt :toInt,
+        toStr :toStr
     };
     //Add extend at Ayumi for later
     Ayumi.tools = Ayumi.fn.tools = tools;
+    Ayumi.extend(Ayumi.tools);
 
     /***
      *  END TOOLS FUNCTIONS --------------------------------------------------------------------------------------------
@@ -282,7 +285,8 @@
         return obj;
     }
     //Add extend at Ayumi for later
-    Object.prototype.each = Ayumi.each = Ayumi.fn.each = each;
+    Ayumi.each = Ayumi.fn.each = each;
+    if(!if_Mootools)Object.prototype.each = Ayumi.each; //Set compatibility for Mootools
 
     /***
      * @name Ayumi.extend
@@ -309,7 +313,8 @@
         return obj;
     }
     //Add extend at Ayumi for later
-    Object.prototype.extend = Ayumi.extend = Ayumi.fn.extend = extend;
+    Ayumi.extend = Ayumi.fn.extend = extend;
+    if(!if_Mootools)Object.prototype.extend = Ayumi.extend
 
     //TODO Actuellement function, Transformation requete ajax en Module avec gestion de queue
     /**
@@ -563,7 +568,7 @@
 
     //event ajoute un event unique listener à un object
     /**
-     * @name Object.event
+     * @name Ayumi.event
      *
      * @description Set a Listener on an Object, when the conditions required is true the callback is called
      *
@@ -584,10 +589,24 @@
         }else
             throw new Error("Can't add event as no Object");
     }
-    Object.prototype.event = Ayumi.event = Ayumi.fn.event = event;
+    Ayumi.event = Ayumi.fn.event = event;
+    if(!if_Mootools)Object.prototype.event = Ayumi.event
 
     /***
      *  END MODULE Event -----------------------------------------------------------------------------------------------
+     */
+
+    /***
+     *  MODULE Animate -------------------------------------------------------------------------------------------------
+     * @dependency :: Module Handler
+     */
+
+    function Animate(){
+        //TODO en préparation ;) so good
+    }
+
+    /***
+     *  END MODULE Animate ---------------------------------------------------------------------------------------------
      */
 
     function Loader(){
@@ -602,6 +621,7 @@
     //Add all Function and Object at external Ayumi instance
     Ayumi.fn.extend({
         screen : Screen,
+        animate : Animate,
         loader : Loader
     });
 
