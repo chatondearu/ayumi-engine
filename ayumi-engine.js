@@ -85,7 +85,8 @@
     //Constante of Core params
         conf={
             //URL to the Server ReST
-            SERVER : '../server/'
+            SERVER : '../server/',
+            DEBUG:true
         },
 
     //Set the local copy of Ayumi definition
@@ -120,7 +121,9 @@
      * Ayumi.log()
      */
     function log(){
-        var message = Ayumi.fn,type = 'log',script='';
+        if(!conf.DEBUG)
+            return false;
+        var message = Ayumi.fn,type = 'log',script=false;
         if(arguments.length>0){
             // log(message)
             if(arguments.length<2){
@@ -129,21 +132,27 @@
                 // log(type,message,log,log,log,[...])
                 type = arguments[0];
                 message = arguments[1];
-                for(var i= 2,l=arguments.length;i<l;i++)
-                    script+='console.'+type+'(arguments['+i+']);';
+                script=true;
             }
         }
         if(console){
-            if(script == '')
-                eval('console.'+type+'(message)');
+            if(!script)
+                console[type](message);
             else{
-                console.group(message);
-                eval(script);
-                console.groupEnd();
+                if(console.group)
+                    console.group(message);
+                else console.log(message);
+
+                for(var i= 2,l=arguments.length;i<l;i++)
+                    console[type](arguments[i]);
+
+                if(console.group)
+                    console.groupEnd();
             }
         }else{
             alert('==='+type+'===\n'+message);
         }
+        return true;
     }
     //Add log at Core for later
     Ayumi.log = Ayumi.fn.log = log;
@@ -227,6 +236,17 @@
     function toStr(value) {return value+''}
 
     /**
+     * @name Ayumi.tools.random()
+     *
+     * @description return a random value between min and max
+     *
+     * @param min
+     * @param max
+     * @return {Number}
+     */
+    function random(min,max){return min + ( Math.random() * (Math.abs(min)+Math.abs(max)) )}
+
+    /**
      * @name Ayumi.tools
      * @type {Object}
      */
@@ -237,7 +257,8 @@
         isObj:isObj,
         isUndef:isUndef,
         toInt :toInt,
-        toStr :toStr
+        toStr :toStr,
+        random :random
     };
     //Add extend at Ayumi for later
     Ayumi.tools = Ayumi.fn.tools = tools;
@@ -298,8 +319,8 @@
         if(arguments.length == 2)
             extObj= arguments[1];
         if(arguments.length === 1){
-            var options = arguments[0],
-                obj =  this;
+            var options = arguments[0];
+                obj = this;
             extend(obj,options);
         }else if(arguments.length > 2) {
             for (var a = 1; a < arguments.length; a++) {
@@ -314,7 +335,7 @@
     }
     //Add extend at Ayumi for later
     Ayumi.extend = Ayumi.fn.extend = extend;
-    if(!if_Mootools)Object.prototype.extend = Ayumi.extend
+    if(!if_Mootools)Object.prototype.extend = Ayumi.extend;
 
     //TODO Actuellement function, Transformation requete ajax en Module avec gestion de queue
     /**
@@ -324,10 +345,11 @@
      * @param callback
      */
     function ajax(uri,callback){
+        var _request =null;
         if(!isFunc(callback))
             callback = function(){};
         if(window.Request){
-            var _request = new Request({
+            _request = new Request({
                 url: uri,
                 method: 'post',
                 format: 'json',
@@ -352,6 +374,123 @@
     }
     //Add ajax at Ayumi for later
     Ayumi.ajax = Ayumi.fn.ajax = ajax;
+
+
+    /***
+     * LIST ------------------------------------------------------------------------------------------------------------
+     */
+
+    /**
+     * Class {List}
+     *
+     * /// methods
+     * List::add(object {Object})
+     * List::remove(object {Object})
+     * List::getNext(o {Object})
+     * List::getParent(o {Object})
+     * List::getByName(o {Object})
+     * List::parcour(callback {function}, limit {int})
+     *
+     * @description gesture of Object's pile with next and parent elements.
+     * @constructor
+     */
+    function List(prefix){
+
+        var that = this;
+        this.prefix = prefix || 'list';
+        this.first = null;
+        this.last = null;
+        this.length = 0;
+
+        this.add = function(name,objet){
+            if(!isStr(name)){
+                objet = name;
+                var date = new Date();
+                name = date.getTime()+ "rnd" + random(0,1000);
+            }
+            if(that.first == null){
+                objet[prefix+'_name'] = name;
+                that.first = objet;
+                that.last = objet;
+            }
+            else{
+                objet[prefix+'_name'] = name;
+                if(!that.getNext(that.last))
+                    that.last[prefix+'_next'] = objet;
+                if(!that.getParent(objet))
+                    objet[prefix+'_parent'] = that.last;
+                that.last = objet;
+            }
+            that.length ++;
+            return that.last;
+        };
+
+        this.remove = function(objet){
+            var parent = that.getParent(objet);
+            var next = that.getNext(objet);
+            if(parent && next){
+                next[prefix+'_parent'] = parent;
+                parent[prefix+'_next'] = next;
+            }else if(next && !parent){
+                next[prefix+'_parent'] = null;
+                that.first = next;
+            }else if(parent && !next){
+                parent[prefix+'_next'] = null;
+                that.last = parent;
+            }else{
+                that.last = null;
+                that.first = null;
+            }
+            objet = null;
+            that.length --;
+        };
+
+        this.getNext = function(o){
+            if(o != null && typeof(o[prefix+'_next']) != "undefined" && o[prefix+'_next'] != null )
+                return o[prefix+'_next'];
+            else
+                return false;
+        };
+        this.getParent = function(o){
+            if(o != null && typeof(o[prefix+'_parent']) != "undefined" && o[prefix+'_parent'] != null )
+                return o[prefix+'_parent'];
+            else
+                return false;
+        };
+
+        this.getByName = function(name){
+            var obj = that.first;
+            while( !isUndef(obj) && obj != null){
+                if(obj[prefix+'_name'] == name){
+                    return obj;
+                }else{
+                    obj = obj[prefix+'_next'];
+                }
+            }
+            return false;
+        };
+
+        this.parcour = function(callback,limit){
+            if(typeof(callback) != "function")
+                callback = function(){};
+            var obj = that.first;
+
+            var i = 0;
+
+            while( !isUndef(obj) && obj != null){
+
+                if(i > limit)
+                    break;
+
+                callback(obj);
+
+                obj = obj[prefix+'_next'];
+            }
+        };
+    }
+    /***
+     *  END LIST -------------------------------------------------------------------------------------------------------
+     */
 
     /***
      * MODULE HANDLER --------------------------------------------------------------------------------------------------
@@ -454,8 +593,7 @@
             if( e.constructor == Event ){
                 e.id = index;
                 b[b.length] = e;
-                index ++;
-                return index;
+                return index ++;
             }else{
                 throw new Error("<method>Add wait <function> to parameter.");
             }
@@ -590,7 +728,7 @@
             throw new Error("Can't add event as no Object");
     }
     Ayumi.event = Ayumi.fn.event = event;
-    if(!if_Mootools)Object.prototype.event = Ayumi.event
+    if(!if_Mootools)Object.prototype.event = Ayumi.event;
 
     /***
      *  END MODULE Event -----------------------------------------------------------------------------------------------
