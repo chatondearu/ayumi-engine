@@ -82,7 +82,7 @@
         if_Jquery = !!(_Jquery.jquery != 'none'),
         if_Mootools = !!(_Mootools.version != 'none'),
 
-    //Constante of Core params
+    //Constante of Ayumi params
         conf={
             //URL to the Server ReST
             SERVER : '../server/',
@@ -97,7 +97,7 @@
     /**
      * @name Ayumi.fn
      *
-     * @description we Initialize Core Object and instantiates Core.fn
+     * @description we Initialize Ayumi Object and instantiates Ayumi.fn
      * @type {Object}
      */
     Ayumi.fn = Ayumi.prototype = {
@@ -154,7 +154,7 @@
         }
         return true;
     }
-    //Add log at Core for later
+    //Add log at Ayumi for later
     Ayumi.log = Ayumi.fn.log = log;
 
     /***
@@ -247,6 +247,16 @@
     function random(min,max){return min + ( Math.random() * (Math.abs(min)+Math.abs(max)) )}
 
     /**
+     * @name Ayumi.tools.trim()
+     *
+     * @description return a random value between min and max
+     *
+     * @param str
+     * @return {str}
+     */
+    function trim(str){ return str.replace(/^\s+/g,'').replace(/\s+$/g,''); }
+
+    /**
      * @name Ayumi.tools
      * @type {Object}
      */
@@ -258,7 +268,8 @@
         isUndef:isUndef,
         toInt :toInt,
         toStr :toStr,
-        random :random
+        random :random,
+        trim :trim
     };
     //Add extend at Ayumi for later
     Ayumi.tools = Ayumi.fn.tools = tools;
@@ -735,16 +746,229 @@
      */
 
     /***
-     *  MODULE Animate -------------------------------------------------------------------------------------------------
+     *  MODULE ANIMATE -------------------------------------------------------------------------------------------------
      * @dependency :: Module Handler
+     * @dependency :: Class List
+     *
+     *
+     * EXCEPTION SAFARI av > OS WINDOWS av /!\
+     **************************************
+     Signature du problème :
+     Nom d’événement de problème:	APPCRASH
+     Nom de l’application:	WebKit2WebProcess.exe
+     Version de l’application:	7534.57.2.4
+     Horodatage de l’application:	4f97642d
+     Nom du module par défaut:	WebKit.dll
+     Version du module par défaut:	7534.57.2.4
+     Horodateur du module par défaut:	4f976417
+     Code de l’exception:	c0000005
+     Décalage de l’exception:	0002d2f8
+     Version du système:	6.1.7601.2.1.0.256.4
+     Identificateur de paramètres régionaux:	1036
+     Information supplémentaire n° 1:	0a9e
+     Information supplémentaire n° 2:	0a9e372d3b4ad19135b953a78882e789
+     Information supplémentaire n° 3:	0a9e
+     Information supplémentaire n° 4:	0a9e372d3b4ad19135b953a78882e789
+     *****************************************
+     * Event 'multi'click sur élément, ajout d'Animation dans Animator, pas de cible précise
+     *
+     * 22/10/2012 11:30--> Premier test;
+     * 22/10/2012 14:20--> suppression multi click n'affecte en rien l'execption;
+     * 22/10/2012 15:27--> Résolution suppression css3 transition, n'affecte pas l'execption;
+     *
+     * Exception récurante chez safari (toute version) sur Windows (toute version)*
+     * Aucunes pistes pour le moment
+     *
      */
 
-    function Animate(){
-        //TODO en préparation ;) so good
+    /* Class */
+    function Animator(){
+
+        var that = this;
+        this.pile = new List('animation');
+
+        this.active = false;
+
+        this.add = function(a){
+            if(arguments.length>0){
+                a = arguments[0];
+                if(isStr(a) && arguments.length>1){
+                    return that.pile.add(a,arguments[1]);
+                }else if(a.constructor == Animation){
+                    return that.pile.add(a);
+                }else return false;
+            }else return false;
+        };
+
+        this.remove = function(a){
+            if(a.constructor == Animation){
+                that.pile.remove(a);
+                return a;
+            }else return false;
+        };
+
+        this.queue = function(){
+            if(that.pile.length <= 0)
+                that.stop();
+            else
+                that.pile.parcour(function(animation){
+                    animation.animate();
+                });
+        };
+
+        this.start = function(){
+            log('info','Animator','animator starting','length : '+this.pile.length,'First Animation name : '+this.pile.first.animation_name);
+            if(!that.active)
+                Ayumi.handler.addEvent("animator",function(){
+                    if(that.active)
+                        that.queue();
+                    else
+                        that.stop();
+                });
+            if(!this.pile.first.active)
+                this.pile.first.active = true;
+            that.active = true;
+        };
+
+        this.stop = function(){
+            Ayumi.handler.removeEvent("animator");
+            that.active = false;
+        };
+
+        this.next = function(animation){
+            that.pile.getNext(animation).active = true;
+        };
+
+        this.getAnimation = function(name){ return that.pile.getByName(name);}
+    }
+    //Init the Animator
+    var animator = new Animator();
+
+    function tweener(type,start,end,frame){
+        //get frame length
+        var i,tween,tab= [];
+        var tweener={
+            linear:function(d,t){
+                return (d/frame)*t;
+            }
+        };
+        if(isObj(start)){
+            for(i=0;i<=frame;i++){
+                tab.push([]);
+                each(start,function(val,key){
+                    tab[i][key] = start[key]+tweener[type]((end[key]-val),i);
+                });
+            }
+        }else{
+            for(i=0;i<=frame;i++){
+                tab.push(start+tweener[type]((end-start),i));
+            }
+        }
+        return tab;
+    }
+
+    function Animation(settings){
+        var that = this,
+            frame=0,
+            o = {
+                start:100,
+                end:200,
+                duration:0.3,
+                tween:'linear',
+                ontween:function(tween){},
+                callback:function(e){}
+            };extend(o,settings);
+
+        //TODO modifier le calcul de tween et le rendre dépendant du fps.
+        var realDuration =(Ayumi.handler.clock.fps < 0)? (Ayumi.handler.clock.fps / 60) * o.duration:o.duration;
+
+        var frameLength = Math.round((realDuration*1000)/Ayumi.handler.getInterval()),
+            tween = tweener(o.tween, o.start, o.end, frameLength);
+        this.active = false;
+        this.queued = false;
+
+        this.animate = function() {
+            if(that.active){
+                o.ontween(tween[frame]);
+                if (frame++ >= frameLength) {
+                    that.active = false;
+                    that.frame = 0;
+                    if(that.queued)
+                        animator.next(that);
+                    animator.remove(that);
+                    return o.callback(that);
+                }
+                return true;
+            }else{
+                return false;
+            }
+        };
+
+        this.start = function() {
+            that.active = true;
+            return that;
+        };
+
+        this.stop = function() {
+            that.active = false;
+            return that;
+        };
+
+        this.queue = function(value){
+            that.queued = value;
+        };
+
+        this.remove = function(){
+            animator.remove(that);
+        };
+    }
+
+    /* Function */
+    function animate(){
+        var param = null,name = false,
+            common_type = '|stop|start|length|';
+        if(arguments.length > 0){
+            param = arguments[0];
+            if(isStr(param)){
+                if(common_type.indexOf(param)>0){
+                    switch(param){
+                        case 'start':
+                            animator.start();
+                            break;
+                        case 'stop':
+                            animator.stop();
+                            break;
+                        case 'length':
+                            return animator.pile.length;
+                            break;
+                    }
+                }else{
+                    //Set name of Animation
+                    name= param;
+                    if(arguments.length>1)
+                        param = arguments[1];
+                    else
+                        return animator.getAnimation(name);
+                }
+            }
+            if(isObj(param)){
+                var anim = new Animation(param);
+                anim.active = true;
+                if(name){
+                    if(!animator.getAnimation(name))
+                        animator.add(name,anim);
+                    else return false;
+                }else animator.add(anim);
+                if(!animator.active)
+                    animator.start();
+                return anim;
+            }
+        }
+        return false;
     }
 
     /***
-     *  END MODULE Animate ---------------------------------------------------------------------------------------------
+     *  END MODULE ANIMATE ---------------------------------------------------------------------------------------------
      */
 
     function Loader(){
